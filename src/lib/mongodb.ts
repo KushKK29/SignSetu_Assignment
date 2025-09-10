@@ -1,15 +1,24 @@
 import mongoose from 'mongoose'
 
-const MONGODB_URI = process.env.MONGODB_URI!
+const MONGODB_URI = "mongodb+srv://kush123:kush123@cluster0.fjijw3f.mongodb.net/"
 
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env.local')
 }
 
-let cached = global.mongoose
+interface CachedConnection {
+  conn: typeof mongoose | null
+  promise: Promise<typeof mongoose> | null
+}
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null }
+declare global {
+  var mongoose: CachedConnection | undefined
+}
+
+let cached: CachedConnection = global.mongoose || { conn: null, promise: null }
+
+if (!global.mongoose) {
+  global.mongoose = cached
 }
 
 async function connectDB() {
@@ -22,7 +31,7 @@ async function connectDB() {
       bufferCommands: false,
     }
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
       return mongoose
     })
   }
